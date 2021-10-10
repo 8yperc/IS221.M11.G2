@@ -1,4 +1,4 @@
-# phantan_IS211.M11_2
+# IS211.M11
 Nhóm 2 môn Cơ sở dữ liệu phân tán.
 # GVHD:
 - ThS. Thái Bảo Trân.
