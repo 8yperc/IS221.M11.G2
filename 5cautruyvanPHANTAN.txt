@@ -1,0 +1,145 @@
+GIAMDOC full quyền, 
+QUANLY xem đc all bảng  - bảng KH_QL, 
+NHANVIEN xem đc all bảng - bảng KH_NV
+
+Kéo xuống để xem Chi nhánh 2
+chi nhánh 1 và 2 chỉ khác nhau .cn1 .cn2
+
+---------------CHI NHÁNH 1---------------------
+
+--Tài khoản quản lý: 
+--Tính tổng tiền phòng của các đặt phòng có trạng thái 'Dat thanh cong'
+--Thông tin hiển thị: MaDatPhong, MaPhong, ThoiDiemDat, SoGio, TongTienPhong
+SELECT DP.MaDatPhong, DP.MaPhong, ThoiDiemDat,
+       SoGio, SoGio*GiaPhong AS TongTienPhong
+FROM cn1.DATPHONG DP, cn1.PHONG P
+WHERE DP.MaPhong = P.MaPhong
+AND TrangThaiDat = 'Dat thanh cong';
+
+
+
+
+--Tài khoản quản lý:
+--Tính doanh thu theo tháng của chi nhánh mình quản lý
+--Thông tin hiển thị: Thang, TongDoanhThu
+SELECT EXTRACT(MONTH FROM ThoiDiemDat) AS THANG,
+       SUM(DP.SoGio*P.GiaPhong)+SUM(D.DonGia*CT.SoLuong) AS TongDoanhThu
+FROM cn1.DATPHONG DP,
+     cn1.PHONG P,
+     cn1.DICHVU D,
+     cn1.CHITIETDICHVU CT
+WHERE DP.MaDatPhong = CT.MaDatPhong
+AND P.MaPhong = DP.MaPhong
+AND CT.MaDV = D.MaDV
+GROUP BY EXTRACT(MONTH FROM ThoiDiemDat)
+
+
+
+
+--Tài khoản nhân viên: 
+--Đưa ra thông tin các phòng được đặt trước tại chi nhánh mình quản lý 
+--cùng với tên và số điện thoại của khách đặt,
+--sắp xếp theo thời gian gần nhất
+SELECT MaDatPhong, MaPhong, ThoiDiemDat, KHQL.MaKH, TenKH, SDT
+FROM cn1.DATPHONG DP, cn1.KHACHHANG_QL KHQL
+WHERE DP.MaKH = KHQL.MaKH
+AND TrangThaiDat = 'Dat truoc'
+ORDER BY ThoiDiemDat;
+
+
+
+
+--Tài khoản nhân viên
+--Tính tổng tiền dịch vụ của các ChiTietDichVu, sắp xếp theo MaDatPhong
+--Thông tin hiển thị: MaDatPhong, MaPhong, MaDV, TenDV, SoLuong, TongTienDichVu
+SELECT CT.MaDatPhong, DP.MaPhong, CT.MaDV, D.TenDV, D.DonGia, 
+       CT.SoLuong, D.DonGia*CT.SoLuong AS TongTienDichVu
+FROM cn1.DATPHONG DP, cn1.DICHVU D, cn1.CHITIETDICHVU CT
+WHERE DP.MaDatPhong = CT.MaDatPhong
+AND D.MaDV = CT.MaDV;
+
+
+
+
+--Tài khoản nhân viên
+--Tính tổng tiền dịch vụ trên mỗi đặt phòng
+--Thông tin hiển thị: MaDatPhong, TongTienDichVu
+SELECT CT.MaDatPhong, SUM(D.DonGia*CT.SoLuong) AS TongTienDichVu
+FROM cn1.CHITIETDICHVU CT, cn1.DICHVU D
+WHERE CT.MaDV = D.MaDV
+GROUP BY CT.MaDatPhong
+
+
+
+
+
+
+---------------CHI NHÁNH 2---------------------
+
+
+--Tài khoản quản lý: 
+--Tính tổng tiền phòng của các đặt phòng có trạng thái 'Dat thanh cong'
+--Thông tin hiển thị: MaDatPhong, MaPhong, ThoiDiemDat, SoGio, TongTienPhong
+SELECT DP.MaDatPhong, DP.MaPhong, ThoiDiemDat,
+       SoGio, SoGio*GiaPhong AS TongTienPhong
+FROM cn2.DATPHONG DP,
+     cn2.PHONG P
+WHERE DP.MaPhong = P.MaPhong
+AND TrangThaiDat = 'Dat thanh cong';
+
+
+
+
+--Tài khoản quản lý:
+--Tính doanh thu theo tháng của chi nhánh mình quản lý
+--Thông tin hiển thị: Thang, TongDoanhThu
+SELECT EXTRACT(MONTH FROM ThoiDiemDat) AS THANG,
+       SUM(DP.SoGio*P.GiaPhong)+SUM(D.DonGia*CT.SoLuong) AS TongDoanhThu
+FROM cn2.DATPHONG DP,
+     cn2.PHONG P,
+     cn2.DICHVU D,
+     cn2.CHITIETDICHVU CT
+WHERE DP.MaDatPhong = CT.MaDatPhong
+AND P.MaPhong = DP.MaPhong
+AND CT.MaDV = D.MaDV
+GROUP BY EXTRACT(MONTH FROM ThoiDiemDat)
+
+
+
+
+--Tài khoản nhân viên: 
+--Đưa ra thông tin các phòng được đặt trước tại chi nhánh mình quản lý 
+--cùng với tên và số điện thoại của khách đặt,
+--sắp xếp theo thời gian gần nhất
+SELECT MaDatPhong, MaPhong, ThoiDiemDat, KHQL.MaKH, TenKH, SDT
+FROM cn2.DATPHONG DP, 
+     cn2.KHACHHANG_QL KHQL
+WHERE DP.MaKH = KHQL.MaKH
+AND TrangThaiDat = 'Dat truoc'
+ORDER BY ThoiDiemDat;
+
+
+
+
+--Tài khoản nhân viên
+--Tính tổng tiền dịch vụ của các ChiTietDichVu, sắp xếp theo MaDatPhong
+--Thông tin hiển thị: MaDatPhong, MaPhong, MaDV, TenDV, SoLuong, TongTienDichVu
+SELECT CT.MaDatPhong, DP.MaPhong, CT.MaDV, D.TenDV, D.DonGia, 
+       CT.SoLuong, D.DonGia*CT.SoLuong AS TongTienDichVu
+FROM cn2.DATPHONG DP, 
+     cn2.DICHVU D,
+     cn2.CHITIETDICHVU CT
+WHERE DP.MaDatPhong = CT.MaDatPhong
+AND D.MaDV = CT.MaDV;
+
+
+
+
+--Tài khoản nhân viên
+--Tính tổng tiền dịch vụ trên mỗi đặt phòng
+--Thông tin hiển thị: MaDatPhong, TongTienDichVu
+SELECT CT.MaDatPhong, SUM(D.DonGia*CT.SoLuong) AS TongTienDichVu
+FROM cn2.CHITIETDICHVU CT,
+     cn2.DICHVU D
+WHERE CT.MaDV = D.MaDV
+GROUP BY CT.MaDatPhong
