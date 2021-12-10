@@ -255,7 +255,7 @@ REFERENCES CHINHANH(MaCN);
 --YEUCAU4--
 --CHUA TOI UU--
 EXPLAIN PLAN FOR(
-SELECT LoaiPhong, TenCN, Soluong
+SELECT KH.MaKH, LoaiPhong, Soluong
 FROM KHACHHANG KH, PHONG P, CHINHANH CN, DICHVU DV, CHITIETDICHVU CTDV, DATPHONG DP
 WHERE KH.MaKH = DP.MaKH AND DP.MaPhong = P.MaPhong AND P.MaCN = CN.MaCN
 AND DP.MaDatPhong = CTDV.MaDatPhong AND DV.MaDV = CTDV.MaDV AND TenDV = 'Bia');
@@ -264,7 +264,7 @@ SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY());
 
 --SAU TOI UU--
 EXPLAIN PLAN FOR(
-SELECT LoaiPhong, TenCN, SoLuong FROM
+SELECT MaKH, LoaiPhong, SoLuong FROM
         (SELECT MaPhong, SoLuong, MaKH FROM
             (SELECT MaDatPhong, SoLuong FROM
                 (SELECT MADV FROM DICHVU WHERE TenDV = 'Bia')A
@@ -272,10 +272,72 @@ SELECT LoaiPhong, TenCN, SoLuong FROM
                 ON A.MaDV = B.MaDV)C
             JOIN (SELECT MaDatPhong, MaPhong, MaKH FROM DATPHONG)D
             ON C.MaDatPhong = D.MaDatPhong)E
-        JOIN (SELECT MaPhong, TenCN, LoaiPhong FROM
-            (SELECT MaCN, TenCN FROM CHINHANH)F
-            JOIN (SELECT MaCN, MaPhong, LoaiPhong FROM PHONG)G
-            ON F.MaCN = G.MaCN)H
+        JOIN (SELECT MaPhong, LoaiPhong FROM PHONG)H
         ON E.MaPhong = H.MaPhong);
 
 SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY());
+
+--TOIUUPHANTAN
+(SELECT KH.MaKH, LoaiPhong, Soluong
+FROM CN1_KARA.KHACHHANG_QL KH, CN1_KARA.PHONG P, CN1_KARA.CHINHANH CN,
+CN1_KARA.DICHVU DV, CN1_KARA.CHITIETDICHVU CTDV, CN1_KARA.DATPHONG DP
+WHERE KH.MaKH = DP.MaKH AND DP.MaPhong = P.MaPhong
+AND DP.MaDatPhong = CTDV.MaDatPhong AND DV.MaDV = CTDV.MaDV AND TenDV = 'Bia')
+UNION
+(SELECT KH.MaKH, LoaiPhong, Soluong
+FROM CN2_KARA.KHACHHANG_QL@CN2_KARA KH, CN2_KARA.PHONG@CN2_KARA P, CN2_KARA.CHINHANH@CN2_KARA CN,
+CN2_KARA.DICHVU@CN2_KARA DV, CN2_KARA.CHITIETDICHVU@CN2_KARA CTDV, CN2_KARA.DATPHONG@CN2_KARA DP
+WHERE KH.MaKH = DP.MaKH AND DP.MaPhong = P.MaPhong
+AND DP.MaDatPhong = CTDV.MaDatPhong AND DV.MaDV = CTDV.MaDV AND TenDV = 'Bia');
+
+--1. Tìm khách hàng h?y ??t phòng nh?ng không ??t l?i.
+SELECT KH.MaKH, TenKH
+FROM KHACHHANG KH JOIN DATPHONG DP ON KH.MaKH = DP.MaKH
+MINUS
+SELECT KH.MaKH, TenKH
+FROM KHACHHANG KH JOIN DATPHONG DP ON KH.MaKH = DP.MaKH
+WHERE TrangThaiDat = 'Dat thanh cong'
+MINUS
+SELECT KH.MaKH, TenKH
+FROM KHACHHANG KH JOIN DATPHONG DP ON KH.MaKH = DP.MaKH
+WHERE TrangThaiDat = 'Dat truoc';
+
+--2. Th?ng kê t?ng s? d?ch v? khách hàng s? d?ng ? m?i l?n ??t phòng.
+SELECT MaKH, DP.MaDatPhong, COUNT(MaKH) AS SoDichVu
+FROM DATPHONG DP, CHITIETDICHVU CT
+WHERE CT.MaDatPhong = DP.MaDatPhong
+GROUP BY MaKH, DP.MaDatPhong
+ORDER BY MaKH, SoDichVu DESC;
+
+--3. Th?ng kê t?n su?t các d?ch v? ???c g?i theo s? l?n t? cao ??n th?p.
+SELECT D.MaDV, TenDV, COUNT(D.MaDV) AS SoLanGoi
+FROM DICHVU D JOIN CHITIETDICHVU CT ON D.MaDV = CT.MaDV
+GROUP BY D.MaDV, TenDV
+ORDER BY SoLanGoi DESC;
+
+--4. Cho bi?t t?n su?t các phòng ???c ??t theo chi nhánh.
+SELECT P.MaPhong, LoaiPhong, CN.MaCN, COUNT(P.MaPhong) AS TanSuat
+FROM PHONG P, DATPHONG DP, CHINHANH CN
+WHERE P.MaPhong = DP.MaPhong
+AND CN.MaCN = P.MaCN
+GROUP BY P.MaPhong, LoaiPhong, CN.MaCN
+ORDER BY CN.MaCN, TanSuat DESC;
+
+--5. Tìm khách hàng ??t phòng thành công ? c? hai chi nhánh.
+SELECT KH.MAKH, KH.TenKH, KH.DiaChi
+FROM KHACHHANG KH
+WHERE MAKH IN ( SELECT DP.MAKH
+                FROM DATPHONG DP
+                WHERE DP.MaKH = KH.MaKH 
+                AND NOT EXISTS (SELECT * 
+                                FROM CHINHANH CN
+                                WHERE NOT EXISTS(
+                                SELECT *
+                                FROM (  SELECT *
+                                        FROM DATPHONG DP JOIN PHONG P
+                                        ON DP.MaPhong = P.MaPhong) A
+                                        WHERE A.MaKH=KH.MaKH 
+                                        AND A.MaCN = CN.MaCN 
+                                        AND A.TrangThaiDat = 'Dat thanh cong')));
+                                        
+
