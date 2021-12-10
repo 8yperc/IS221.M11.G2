@@ -1,0 +1,83 @@
+--Lấy MaKH, TenKH, TienTichLuy 3 khách hàng 'Thanh Vien' có tiền tích lũy cao nhất
+SELECT MaKH, TenKH, TienTichLuy FROM
+CN1_KARA.KHACHHANG_QL
+WHERE LoaiKH = 'Thanh Vien'
+ORDER BY TienTichLuy DESC
+FETCH FIRST 3 ROWS ONLY;
+
+--Tính tổng tiền phòng của các đặt phòng có trạng thái 'Dat thanh cong' trên cả 2 chi nhanh
+--Thông tin hiển thị: MaDatPhong, MaPhong, MaCN, ThoiDiemDat, SoGio, TongTienPhong
+SELECT * FROM
+((SELECT DP.MaDatPhong, DP.MaPhong, P.MaCN, ThoiDiemDat,
+       SoGio, SoGio*GiaPhong AS TongTienPhong
+FROM CN1_KARA.DATPHONG DP, CN1_KARA.PHONG P
+WHERE DP.MaPhong = P.MaPhong
+AND TrangThaiDat = 'Dat thanh cong')
+UNION
+(SELECT DP.MaDatPhong, DP.MaPhong, P.MaCN, ThoiDiemDat,
+       SoGio, SoGio*GiaPhong AS TongTienPhong
+FROM CN2_KARA.DATPHONG@CN2_KARA DP, CN2_KARA.PHONG@CN2_KARA P
+WHERE DP.MaPhong = P.MaPhong
+AND TrangThaiDat = 'Dat thanh cong'));
+
+--Tính doanh thu của chi nhánh 2 theo từng tháng
+--Thông tin hiển thị: Thang, TongDoanhThu
+SELECT EXTRACT(MONTH FROM ThoiDiemDat) AS THANG,
+       EXTRACT(YEAR FROM ThoiDiemDat) AS NAM,
+       SUM(DP.SoGio*P.GiaPhong)+SUM(D.DonGia*CT.SoLuong) AS TongDoanhThu
+FROM CN2_KARA.DATPHONG@CN2_KARA DP,
+     CN2_KARA.PHONG@CN2_KARA P,
+     CN2_KARA.DICHVU@CN2_KARA D,
+     CN2_KARA.CHITIETDICHVU@CN2_KARA CT
+WHERE DP.MaDatPhong = CT.MaDatPhong
+AND P.MaPhong = DP.MaPhong
+AND CT.MaDV = D.MaDV
+GROUP BY (EXTRACT(MONTH FROM ThoiDiemDat), EXTRACT(YEAR FROM ThoiDiemDat));
+
+--Tính tổng tiền dịch vụ của các ChiTietDichVu, sắp xếp theo MaCN, MaDatPhong
+--Thông tin hiển thị: MaDatPhong, TongTienDichVu
+SELECT MaCN, MaDatPhong, SUM(Tong) AS TongTienDichVu FROM
+((SELECT P.MaCN, CT.MaDatPhong, D.DonGia*CT.SoLuong AS Tong
+FROM CN1_KARA.DATPHONG DP, CN1_KARA.DICHVU D, CN1_KARA.CHITIETDICHVU CT, CN1_KARA.PHONG P
+WHERE DP.MaDatPhong = CT.MaDatPhong AND P.MaPhong = DP.MaPhong
+AND D.MaDV = CT.MaDV)
+UNION
+(SELECT P.MaCN, CT.MaDatPhong, D.DonGia*CT.SoLuong AS Tong
+FROM CN2_KARA.DATPHONG@CN2_KARA DP, CN2_KARA.DICHVU@CN2_KARA D, CN2_KARA.CHITIETDICHVU@CN2_KARA CT, CN2_KARA.PHONG@CN2_KARA P
+WHERE DP.MaDatPhong = CT.MaDatPhong
+AND D.MaDV = CT.MaDV))
+GROUP BY (MaCN, MaDatPhong)
+ORDER BY MaCN, MaDatPhong ASC;
+
+--5. Tìm khách hàng đặt phòng thành công ở cả hai chi nhánh.
+SELECT KH.MAKH, KH.TenKH, KH.DiaChi
+FROM CN1_KARA.KHACHHANG_QL KH
+WHERE MAKH IN ( SELECT DP.MAKH
+                FROM ((SELECT * FROM CN1_KARA.DATPHONG) UNION (SELECT * FROM CN2_KARA.DATPHONG@CN2_KARA)) DP
+                WHERE DP.MaKH = KH.MaKH 
+                AND NOT EXISTS (SELECT * 
+                                FROM CN1_KARA.CHINHANH CN
+                                WHERE NOT EXISTS(
+                                SELECT *
+                                FROM (  SELECT *
+                                        FROM ((SELECT * FROM CN1_KARA.DATPHONG) UNION (SELECT * FROM CN2_KARA.DATPHONG@CN2_KARA)) DP
+			JOIN ((SELECT * FROM CN1_KARA.PHONG) UNION (SELECT * FROM CN2_KARA.PHONG@CN2_KARA)) P
+                                        ON DP.MaPhong = P.MaPhong) A
+                                        WHERE A.MaKH=KH.MaKH 
+                                        AND A.MaCN = CN.MaCN 
+                                        AND A.TrangThaiDat = 'Dat thanh cong')));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
