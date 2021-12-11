@@ -1,0 +1,30 @@
+grant connect, dba to GIAMDOC_KARA;
+grant select on CN1_KARA.CHINHANH to GIAMDOC_KARA;
+grant select on CN1_KARA.PHONG to GIAMDOC_KARA;
+grant select on CN1_KARA.DICHVU to GIAMDOC_KARA;
+grant select on CN1_KARA.KHACHHANG_QL to GIAMDOC_KARA;
+grant select on CN1_KARA.KHACHHANG_NV to GIAMDOC_KARA;
+grant select on CN1_KARA.DATPHONG to GIAMDOC_KARA;
+grant select on CN1_KARA.CHITIETDICHVU to GIAMDOC_KARA;
+GRANT CREATE DATABASE LINK TO GIAMDOC_KARA;
+
+
+grant connect to QUANLY_KARA;
+grant select on CN1_KARA.CHINHANH to QUANLY_KARA;
+grant select on CN1_KARA.PHONG to QUANLY_KARA;
+grant select on CN1_KARA.DICHVU to QUANLY_KARA;
+grant select on CN1_KARA.KHACHHANG_QL to QUANLY_KARA;
+grant select on CN1_KARA.DATPHONG to QUANLY_KARA;
+grant select on CN1_KARA.CHITIETDICHVU to QUANLY_KARA;
+
+
+grant connect to NHANVIEN_KARA;
+grant select on CN1_KARA.CHINHANH to NHANVIEN_KARA;
+grant select on CN1_KARA.PHONG to NHANVIEN_KARA;
+grant select on CN1_KARA.DICHVU to NHANVIEN_KARA;
+grant select on CN1_KARA.KHACHHANG_NV to NHANVIEN_KARA;
+grant select on CN1_KARA.DATPHONG to NHANVIEN_KARA;
+grant select on CN1_KARA.CHITIETDICHVU to NHANVIEN_KARA;
+
+
+CREATE DATABASE LINK CN2_KARA connect to GIAMDOC_KARA identified by giamdoc using 'CN2_KARA';
